@@ -1,26 +1,20 @@
 package com.terriblefriends.booktrolling.mixins.tooltips;
 
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.component.type.JukeboxPlayableComponent;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.MusicDiscItem;
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List;
+import java.util.function.Consumer;
 
-@Mixin(MusicDiscItem.class)
-public class MusicDiscItemMixin extends Item {
-    public MusicDiscItemMixin(Settings settings) {
-        super(settings);
-    }
-
-    @Inject(at=@At("HEAD"),method="appendTooltip")
-    public void booktrolling$appendSizeTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context, CallbackInfo ci) {
-        super.appendTooltip(stack, world, tooltip, context);
+@Mixin(JukeboxPlayableComponent.class)
+public class MusicDiscItemMixin {
+    @Inject(at=@At("HEAD"),method="appendTooltip", cancellable = true)
+    public void booktrolling$appendSizeTooltip(Item.TooltipContext context, Consumer<Text> tooltip, TooltipType type, CallbackInfo ci) {
+        ci.cancel();
     }
 }

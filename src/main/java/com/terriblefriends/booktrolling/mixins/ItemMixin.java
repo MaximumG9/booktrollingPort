@@ -3,14 +3,15 @@ package com.terriblefriends.booktrolling.mixins;
 import com.mojang.logging.LogUtils;
 import com.terriblefriends.booktrolling.Booktrolling;
 import com.terriblefriends.booktrolling.ItemSizeThread;
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.tooltip.TooltipType;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -29,8 +30,8 @@ public class ItemMixin {
     private static Future currentTask = null;
     private static ItemSizeThread currentThread = null;
 
-    @Inject(at=@At("HEAD"),method = "Lnet/minecraft/item/Item;appendTooltip(Lnet/minecraft/item/ItemStack;Lnet/minecraft/world/World;Ljava/util/List;Lnet/minecraft/client/item/TooltipContext;)V")
-    private void booktrolling$handleItemSizeDebug(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context, CallbackInfo ci) {
+    @Inject(at=@At("HEAD"),method = "appendTooltip")
+    private void booktrolling$handleItemSizeDebug(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType type, CallbackInfo ci) {
         if (!Booktrolling.itemSizeDebug || stack.isEmpty()) {
             return;
         }
@@ -62,7 +63,7 @@ public class ItemMixin {
         else {
             oldStack = stack;
             oldResults = null;
-            currentThread = new ItemSizeThread(stack);
+            currentThread = new ItemSizeThread(stack,Booktrolling.registryManager);
             currentTask = threadPool.submit(currentThread);
             return;
         }

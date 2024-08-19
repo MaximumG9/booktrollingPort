@@ -9,10 +9,9 @@
     "GameMenuScreenMixin",
     "ItemEntityMixin",
     "ItemMixin",
-    "PacketByteBufMixin",
     "PacketInflaterMixin",
-    "WrittenBookItemMixin",
-
+    "RegistryByteBufMixin",
+    "WrittenBookContentPredicateMixin",
     "tooltips.BannerItemMixin",
     "tooltips.BannerPatternItemMixin",
     "tooltips.BundleItemMixin",

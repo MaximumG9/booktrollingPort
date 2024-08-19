@@ -1,9 +1,9 @@
 package com.terriblefriends.booktrolling.mixins.tooltips;
 
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.EntityBucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,7 +20,7 @@ public class EntityBucketItemMixin extends Item {
     }
 
     @Inject(at=@At("HEAD"),method="appendTooltip")
-    public void booktrolling$appendSizeTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context, CallbackInfo ci) {
-        super.appendTooltip(stack, world, tooltip, context);
+    public void booktrolling$appendSizeTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type, CallbackInfo ci) {
+        super.appendTooltip(stack, context, tooltip, type);
     }
 }

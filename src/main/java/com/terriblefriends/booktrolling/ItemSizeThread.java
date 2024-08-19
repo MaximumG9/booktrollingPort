@@ -1,25 +1,28 @@
 package com.terriblefriends.booktrolling;
 
+import com.jcraft.jogg.Packet;
 import com.mojang.logging.LogUtils;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtTagSizeTracker;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.encoding.VarInts;
-import net.minecraft.registry.Registries;
+import net.minecraft.registry.DynamicRegistryManager;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.zip.Deflater;
 
 public class ItemSizeThread extends Thread {
 
-    public ItemSizeThread(ItemStack stack) {
+    public ItemSizeThread(ItemStack stack, DynamicRegistryManager registryManager) {
         this.stack = stack;
+        this.registryManager = registryManager;
     }
 
+    private final DynamicRegistryManager registryManager;
     private final ItemStack stack;
     private final Deflater deflater = new Deflater();
     private final byte[] deflateBuffer = new byte[8192];
@@ -32,38 +35,26 @@ public class ItemSizeThread extends Thread {
     @Override
     public void run() {
         try {
-            PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-            buf.writeItemStack(this.stack);
+            NbtElement element = this.stack.encode(this.registryManager);
+
+            Function<ByteBuf,RegistryByteBuf> registryUpgrader = RegistryByteBuf.makeFactory(this.registryManager);
+
+            RegistryByteBuf buf = registryUpgrader.apply(new PacketByteBuf(Unpooled.buffer()));
+
+            ItemStack.PACKET_CODEC.encode(buf,this.stack);
+
             this.results.byteSize = buf.readableBytes();
 
-            buf.readBoolean();
-            ItemStack itemStack = new ItemStack(buf.readRegistryValue(Registries.ITEM), buf.readByte());
-
-            AtomicLong byteTracker = new AtomicLong(0);
-
-            int i = buf.readerIndex();
-            byte b = buf.readByte();
-            if (b != 0) {
-                buf.readerIndex(i);
-                ByteBufInputStream BBIS = new ByteBufInputStream(buf);
-
-                NbtTagSizeTracker tracker = new NbtTagSizeTracker(Long.MAX_VALUE,Integer.MAX_VALUE) {
-                    public void add(long bytes) {
-                        byteTracker.set(byteTracker.get() + bytes);
-                    }
-                };
-                itemStack.setNbt((NbtCompound) NbtIo.read(BBIS, tracker));
-            }
-
-            this.results.nbtSize = byteTracker.get();
+            this.results.nbtSize = element.getSizeInBytes();
 
             PacketByteBuf compressionBuf = new PacketByteBuf(Unpooled.buffer());
+
             if (this.results.byteSize > 0 && this.results.byteSize <= 2147483645) {
                 buf.resetReaderIndex();
 
                 byte[] bs = buf.array();
                 compressionBuf.writeVarInt(bs.length);
-                deflater.setInput(bs, 0, (int) this.results.byteSize);
+                deflater.setInput(bs);
                 deflater.finish();
 
                 while (!this.deflater.finished()) {

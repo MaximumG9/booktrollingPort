@@ -10,19 +10,13 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.BookUpdateC2SPacket;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @Mixin(BookEditScreen.class)
 public abstract class BookEditScreenMixin extends Screen {
@@ -38,7 +32,7 @@ public abstract class BookEditScreenMixin extends Screen {
 
     @Final @Shadow @Mutable private SelectionManager currentPageSelectionManager = new SelectionManager(this::getCurrentPageContent, this::setPageContent, this::getClipboard, this::setClipboard, (string) -> {
         return MinecraftClient.getInstance().isInSingleplayer() ? string.length() <= 32767 : string.length() <= 8192;
-    });;
+    });
     @Final @Shadow @Mutable private SelectionManager bookTitleSelectionManager = new SelectionManager(() -> this.title, title -> this.title = title, this::getClipboard, this::setClipboard, (string) -> {
         return MinecraftClient.getInstance().isInSingleplayer() ? string.length() <= 65535 : string.length() <= 128;
     });
@@ -56,7 +50,7 @@ public abstract class BookEditScreenMixin extends Screen {
     }
 
 
-    @Inject(at=@At("HEAD"),method="finalizeBook", cancellable = true)
+    @Inject(at=@At("HEAD"), method="finalizeBook", cancellable = true)
     private void booktrolling$injectBookPayload(boolean signBook, CallbackInfo ci) {
         if (injecting) {
             Random rand = new Random();
@@ -93,7 +87,7 @@ public abstract class BookEditScreenMixin extends Screen {
                 }
             }
 
-            Optional title = Optional.empty();
+            Optional<String> title = Optional.empty();
 
             if (sign) {
                 title = Optional.of("BookTrolling™ by Captain_S0L0");
@@ -106,7 +100,7 @@ public abstract class BookEditScreenMixin extends Screen {
         }
     }
 
-    @Inject(at=@At("HEAD"),method="Lnet/minecraft/client/gui/screen/ingame/BookEditScreen;init()V")
+    @Inject(at=@At("HEAD"),method= "init()V")
     private void booktrolling$addGuiButtons(CallbackInfo ci) {
         int y = 0;
         this.addDrawableChild(ButtonWidget.builder(Text.literal("1023"), (button) -> {
